@@ -12,7 +12,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 PROJECT="$PROJECT_DIR/SimBuddy.xcodeproj"
 SCHEME="SimBuddy"
-NOTARY_PROFILE="notarytool"
+NOTARY_PROFILE="${NOTARY_PROFILE:-notarytool}"
+DEVELOPMENT_TEAM="${DEVELOPMENT_TEAM:-}"
 
 # ─── 인자 파싱 ───
 VERSION=""
@@ -73,6 +74,11 @@ echo "[2/7] Archive 빌드..."
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
+TEAM_ARG=""
+if [[ -n "$DEVELOPMENT_TEAM" ]]; then
+    TEAM_ARG="DEVELOPMENT_TEAM=$DEVELOPMENT_TEAM"
+fi
+
 xcodebuild archive \
     -project "$PROJECT" \
     -scheme "$SCHEME" \
@@ -80,6 +86,7 @@ xcodebuild archive \
     -archivePath "$ARCHIVE_PATH" \
     MARKETING_VERSION="$VERSION" \
     CURRENT_PROJECT_VERSION="$(date +%Y%m%d)" \
+    $TEAM_ARG \
     2>&1 | tail -3
 
 echo "  ✓ Archive 완료"
@@ -132,7 +139,7 @@ if xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" &>/dev/null; th
     echo "  ✓ 공증 완료"
 else
     echo "  ⚠ notarytool 키체인 프로필 없음 - 공증 생략"
-    echo "  설정하려면: xcrun notarytool store-credentials \"$NOTARY_PROFILE\" --apple-id <email> --team-id 8LHHKYA787"
+    echo "  설정하려면: xcrun notarytool store-credentials \"$NOTARY_PROFILE\" --apple-id <email> --team-id <team-id>"
 fi
 
 # ─── 6. /Applications 설치 ───
